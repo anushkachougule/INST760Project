@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F1 Circuits Globe Explorer</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/topojson@3"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    canvas {
+      margin: auto;
+      display: block;
+      background-color: #f0f0f0;
+    }
+    #countryName {
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="countryName">Country Name</div>
+<canvas id="globeCanvas" width="800" height="720"></canvas>
+
+<script src="globe.js"></script>
+
+</body>
+</html>
