@@ -9,7 +9,52 @@ const context = canvas.getContext("2d");
 const countryNameDiv = document.getElementById("countryName");
 
 // Country name mapping for consistent formatting
-const countryNameMapping = { /* (same as your original country mapping) */ };
+const countryNameMapping = {
+  "USA": "United States of America",
+  "UK": "United Kingdom",
+  "Russia": "Russian Federation",
+  "South Korea": "Korea, Republic of",
+  "Venezuela": "Venezuela (Bolivarian Republic of)",
+  "Czech Republic": "Czechia",
+  "Ivory Coast": "Côte d'Ivoire",
+  "Iran": "Iran (Islamic Republic of)",
+  "Vietnam": "Viet Nam",
+  "UAE": "United Arab Emirates",
+  "Australia": "Australia",
+  "Qatar": "Qatar",
+  "Sweden": "Sweden",
+  "Azerbaijan": "Azerbaijan",
+  "Spain": "Spain",
+  "Germany": "Germany",
+  "Switzerland": "Switzerland",
+  "Belgium": "Belgium",
+  "Hungary": "Hungary",
+  "Argentina": "Argentina",
+  "Morocco": "Morocco",
+  "France": "France",
+  "South Africa": "South Africa",
+  "Portugal": "Portugal",
+  "Turkey": "Turkey",
+  "Saudi Arabia": "Saudi Arabia",
+  "Malaysia": "Malaysia",
+  "Singapore": "Singapore",
+  "Mexico": "Mexico",
+  "Monaco": "Monaco",
+  "Canada": "Canada",
+  "Italy": "Italy",
+  "Japan": "Japan",
+  "Brazil": "Brazil",
+  "China": "China",
+  "Austria": "Austria",
+  "India": "India",
+  "Netherlands": "Netherlands",
+  "Korea": "Korea, Republic of",
+  "Bahrain": "Bahrain",
+  "Singapore": "Singapore",
+  "Monaco": "Monaco",
+  "USA": "United States of America"  // for Las Vegas
+
+};
 
 // Helper function to get the correct country name
 function getMappedCountryName(country) {
@@ -35,7 +80,7 @@ Promise.all([
     // Draw the outer sphere (globe) with a white border
     context.beginPath();
     path({ type: "Sphere" });
-    context.fillStyle = "black";  // Globe background color
+    context.fillStyle = "#1b1b1b";  // Globe background color
     context.fill();
     context.strokeStyle = "white"; // White border for the globe
     context.lineWidth = 2;
@@ -124,4 +169,4 @@ Promise.all([
       previousLocation = location;
     }, i * 2000); // Delay between each transition
   });
-});
+}).catch(error => console.error("Error loading data:", error));
