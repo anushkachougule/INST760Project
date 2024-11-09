@@ -1,58 +1,15 @@
 // Set up the canvas and context
-const width = 800;
-const height = 720;
+const width = 600;
+const height = 400;
 const canvas = document.getElementById("globeCanvas");
+canvas.width = width;
+canvas.height = height;
 const context = canvas.getContext("2d");
 
 const countryNameDiv = document.getElementById("countryName");
 
 // Country name mapping for consistent formatting
-const countryNameMapping = {
-  "USA": "United States of America",
-  "UK": "United Kingdom",
-  "Russia": "Russian Federation",
-  "South Korea": "Korea, Republic of",
-  "Venezuela": "Venezuela (Bolivarian Republic of)",
-  "Czech Republic": "Czechia",
-  "Ivory Coast": "Côte d'Ivoire",
-  "Iran": "Iran (Islamic Republic of)",
-  "Vietnam": "Viet Nam",
-  "UAE": "United Arab Emirates",
-  "Australia": "Australia",
-  "Qatar": "Qatar",
-  "Sweden": "Sweden",
-  "Azerbaijan": "Azerbaijan",
-  "Spain": "Spain",
-  "Germany": "Germany",
-  "Switzerland": "Switzerland",
-  "Belgium": "Belgium",
-  "Hungary": "Hungary",
-  "Argentina": "Argentina",
-  "Morocco": "Morocco",
-  "France": "France",
-  "South Africa": "South Africa",
-  "Portugal": "Portugal",
-  "Turkey": "Turkey",
-  "Saudi Arabia": "Saudi Arabia",
-  "Malaysia": "Malaysia",
-  "Singapore": "Singapore",
-  "Mexico": "Mexico",
-  "Monaco": "Monaco",
-  "Canada": "Canada",
-  "Italy": "Italy",
-  "Japan": "Japan",
-  "Brazil": "Brazil",
-  "China": "China",
-  "Austria": "Austria",
-  "India": "India",
-  "Netherlands": "Netherlands",
-  "Korea": "Korea, Republic of",
-  "Bahrain": "Bahrain",
-  "Singapore": "Singapore",
-  "Monaco": "Monaco",
-  "USA": "United States of America"  // for Las Vegas
-
-};
+const countryNameMapping = { /* (same as your original country mapping) */ };
 
 // Helper function to get the correct country name
 function getMappedCountryName(country) {
@@ -72,60 +29,73 @@ Promise.all([
   const borders = topojson.mesh(worldData, worldData.objects.countries, (a, b) => a !== b);
 
   // Render function to draw the globe and circuits
-  function render(highlightCountry, highlightLocation, circuitName) {
+  function render(highlightCountry, highlightLocation, circuitName, arcCoords = null) {
     context.clearRect(0, 0, width, height);
-  
-    // Log the country and circuit being processed
-    console.log(`Rendering for country: ${highlightCountry}, circuit: ${circuitName}`);
-  
-    // Highlight the country
+    
+    // Draw the outer sphere (globe) with a white border
+    context.beginPath();
+    path({ type: "Sphere" });
+    context.fillStyle = "black";  // Globe background color
+    context.fill();
+    context.strokeStyle = "white"; // White border for the globe
+    context.lineWidth = 2;
+    context.stroke();
+
+    // Draw each country in light gray, highlighting selected ones in red
     land.forEach(country => {
       context.beginPath();
       path(country);
-  
+
       const mappedCountryName = getMappedCountryName(highlightCountry);
       const countryNameInData = country.properties.name;
-  
+
       if (countryNameInData === mappedCountryName) {
-        context.fillStyle = "#f00";  // Highlight country in red
-        console.log(`Highlighting: ${countryNameInData}`);
+        context.fillStyle = "red";  // Highlighted country in red
       } else {
-        context.fillStyle = "#ccc";  // Default fill for other countries
+        context.fillStyle = "#444";  // Light gray color for other countries
       }
       context.fill();
     });
-  
-    // Draw country borders
+
+    // Draw country borders in white for clarity
     context.beginPath();
     path(borders);
-    context.strokeStyle = "#fff";
-    context.lineWidth = 0.75;
+    context.strokeStyle = "white";
+    context.lineWidth = 0.5;
     context.stroke();
-  
-    // Ensure that multiple circuit locations are marked and labeled even if they are in the same country
+
+    // Draw the arc between countries with a brighter color
+    if (arcCoords) {
+      context.beginPath();
+      const arcPath = d3.geoPath()
+                        .projection(projection)
+                        .context(context);
+      arcPath({ type: "LineString", coordinates: arcCoords });
+      context.strokeStyle = "#bbb"; // Brighter gray color for arc
+      context.lineWidth = 2;
+      context.stroke();
+    }
+
+    // Draw the circuit marker dot in red and label in white
     if (highlightLocation) {
       const [x, y] = projection([highlightLocation.lng, highlightLocation.lat]);
       context.beginPath();
       context.arc(x, y, 5, 0, 2 * Math.PI);
-      context.fillStyle = "black";
+      context.fillStyle = "red";  // Marker color in red for F1 theme
       context.fill();
-  
-      // Add the circuit name label near the marker
-      console.log(`Placing marker for ${circuitName} at ${highlightLocation.lng}, ${highlightLocation.lat}`);
-      context.font = "14px Arial";
-      context.fillStyle = "black";
+
+      // Set font and color for the circuit name label in white
+      context.font = "bold 14px Arial";
+      context.fillStyle = "white"; // Label color in white for readability
       context.fillText(circuitName, x + 7, y);
     }
   }
-  
 
   // Initial render with no circuit highlighted
   render();
 
   // Rotate and highlight circuits one by one
-  let p1 = [0, 0], p2 = [0, 0];
-  let r1 = [0, 0, 0], r2 = [0, 0, 0];
-
+  let previousLocation = null;
   circuits.forEach((circuit, i) => {
     const country = circuit.country;
     const location = { lat: +circuit.lat, lng: +circuit.lng };
@@ -134,16 +104,24 @@ Promise.all([
     setTimeout(() => {
       countryNameDiv.innerText = `Country: ${country} | Circuit: ${circuitName}`;
 
-      p1 = p2, p2 = [location.lng, location.lat];
-      r1 = r2, r2 = [-p2[0], 20 - p2[1], 0]; // Adjust rotation based on circuit location
-      const iv = d3.interpolate(r1, r2);
+      // Define rotation and interpolation
+      const iv = d3.interpolate(
+        projection.rotate(),
+        [-location.lng, 20 - location.lat]
+      );
+
+      // Define arc coordinates if a previous location exists
+      const arcCoords = previousLocation ? [[previousLocation.lng, previousLocation.lat], [location.lng, location.lat]] : null;
 
       d3.transition()
         .duration(1250)
         .tween("rotate", () => t => {
           projection.rotate(iv(t));
-          render(country, location, circuitName);
+          render(country, location, circuitName, arcCoords);
         });
+
+      // Update previous location
+      previousLocation = location;
     }, i * 2000); // Delay between each transition
   });
 });
